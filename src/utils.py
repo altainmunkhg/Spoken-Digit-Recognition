@@ -1,6 +1,7 @@
 import time
 import os
 import numpy as np
+from torch.utils import data
 from torchvision import datasets, models, transforms
 import torch
 import torch.nn as nn
@@ -12,20 +13,23 @@ import torchaudio
 import torchaudio.functional as F
 import torchaudio.transforms as T
 
+from torch.utils.data import Dataset, DataLoader
+import data_processing
+
 def get_accuracy(model, type='train'):
     if type == 'train':
-        data = train_data
+        dataset = data_processing.train_loader
     elif type == 'val':
-        data = val_data
+        dataset = data_processing.val_loader
     elif type == 'test':
-        data = test_data
+        dataset = data_processing.test_loader
     else:
       print('Wrong type, train, val, or test')
       return
 
     correct = 0
     total = 0
-    for imgs, labels in torch.utils.data.DataLoader(data, batch_size=64):
+    for imgs, labels in dataset:
 
 
         #############################################
@@ -152,3 +156,70 @@ def plot_fbank(fbank, title=None):
     axs.imshow(fbank, aspect="auto")
     axs.set_ylabel("frequency bin")
     axs.set_xlabel("mel bin")
+
+#modifed from https://docs.pytorch.org/audio/stable/transforms.html
+class MyPipeline(torch.nn.Module):
+    def __init__(
+        self,
+        n_fft=512,
+        n_mel=64,
+        stretch_factor=0.8,
+    ):
+        super().__init__()
+        self.target_samples = 8000 # 1 second at 8kHz
+        
+        self.spec = T.Spectrogram(n_fft=n_fft, power=2)
+
+        self.spec_aug = torch.nn.Sequential(
+            T.TimeStretch(stretch_factor, fixed_rate=True),
+            T.FrequencyMasking(freq_mask_param=15),
+            T.TimeMasking(time_mask_param=35),
+        )
+
+        self.amplitude_to_db = T.AmplitudeToDB()
+
+        self.mel_scale = T.MelScale(
+            n_mels=n_mel, sample_rate=8000, n_stft=n_fft // 2 + 1)
+
+    def forward(self, waveform: torch.Tensor) -> torch.Tensor:
+        # Pad or truncate to 8k samples
+        if waveform.shape[1] > self.target_samples:
+            waveform = waveform[:, :self.target_samples]
+        elif waveform.shape[1] < self.target_samples:
+            padding = self.target_samples - waveform.shape[1]
+            waveform = F.pad(waveform, (0, padding))
+
+        # Convert to power spectrogram
+        spec = self.spec(waveform)
+
+        # Apply SpecAugment
+        spec = self.spec_aug(spec)
+
+        # Convert to mel-scale
+        mel = self.mel_scale(spec)
+
+        output = self.amplitude_to_db(mel)
+
+        return output
+    
+class DatasetFolder(Dataset):
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = data_dir
+        self.filenames = [f for f in os.listdir(data_dir) if f.endswith('.wav')]
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.filenames)
+
+    def __getitem__(self, idx):
+        file_name = self.filenames[idx]
+        file_path = os.path.join(self.data_dir, file_name)
+        
+        # Load audio
+        waveform, sample_rate = torchaudio.load(file_path)
+        label = int(file_name.split('_')[0])
+        
+        if self.transform:
+            waveform = self.transform(waveform)
+            
+        return waveform, label

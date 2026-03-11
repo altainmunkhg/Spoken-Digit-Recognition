@@ -31,4 +31,3 @@ utils.plot_spectrogram(mel_spec[0], title="mel spectrogram", ax=axs[2])
 fig.tight_layout()
 plt.show()
 
-print("hi")
