@@ -18,5 +18,6 @@ setuptools==82.0.1
 six==1.17.0
 sympy==1.14.0
 torch==2.10.0
+torchaudio==2.10.0
 torchvision==0.25.0
 typing_extensions==4.15.0
