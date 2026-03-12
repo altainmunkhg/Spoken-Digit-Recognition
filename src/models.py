@@ -9,12 +9,12 @@ class ANNClassifier(nn.Module):
     def __init__(self):
         super(ANNClassifier, self).__init__()
         self.name = "ANNClassifier"
-        self.fc1 = nn.Linear(256 * 6 * 6, 1000)
+        self.fc1 = nn.Linear(64*32, 1000)
         self.fc2 = nn.Linear(1000, 100)
-        self.fc3 = nn.Linear(100, 9)
+        self.fc3 = nn.Linear(100, 10)
 
     def forward(self, x):
-        x = x.view(-1, 256 * 6 * 6) #flatten feature data
+        x = x.view(x.size(0), -1) #flatten feature data
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = self.fc3(x)

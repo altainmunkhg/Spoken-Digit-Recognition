@@ -10,24 +10,22 @@ import torch.optim as optim
 
 import utils
 import models
+import data_processing
+import constants
 
 import torchaudio
 import torchaudio.transforms as T
 
-waveform, sample_rate = torchaudio.load("Free Spoken Digit Dataset (FSDD)/recordings/0_george_0.wav")
-mel_spectrogram = T.MelSpectrogram(sample_rate=sample_rate, n_mels=64)
-spectrogram = T.Spectrogram(n_fft=512)
-
-# Perform transform
-spec = spectrogram(waveform)
-mel_spec = mel_spectrogram(waveform)
 
 
-fig, axs = plt.subplots(3, 1)
-utils.plot_waveform(waveform, sample_rate, title="Original waveform", ax=axs[0])
-utils.plot_spectrogram(spec[0], title="spectrogram", ax=axs[1])
-utils.plot_spectrogram(mel_spec[0], title="mel spectrogram", ax=axs[2])
+model = models.ANNClassifier()
+if constants.use_cuda and torch.cuda.is_available():
+  model.cuda()
+  print('CUDA is available!  Training on GPU ...')
+else:
+  print('CUDA is not available.  Training on CPU ...')
 
-fig.tight_layout()
-plt.show()
+print(len(data_processing.train_data))
+
+utils.train(model, data_processing.train_data, data_processing.val_data, num_epochs=10, batch_size=64, lr = 0.005)
 

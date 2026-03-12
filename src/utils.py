@@ -1,7 +1,7 @@
 import time
 import os
+from PIL.ImageChops import constant
 import numpy as np
-from torch.utils import data
 from torchvision import datasets, models, transforms
 import torch
 import torch.nn as nn
@@ -10,31 +10,21 @@ import matplotlib.pyplot as plt
 import torch.optim as optim 
 
 import torchaudio
-import torchaudio.functional as F
-import torchaudio.transforms as T
+import torchaudio.functional as FA
+import torchaudio.transforms as TA
 
 from torch.utils.data import Dataset, DataLoader
-import data_processing
+import constants
 
-def get_accuracy(model, type='train'):
-    if type == 'train':
-        dataset = data_processing.train_loader
-    elif type == 'val':
-        dataset = data_processing.val_loader
-    elif type == 'test':
-        dataset = data_processing.test_loader
-    else:
-      print('Wrong type, train, val, or test')
-      return
-
+def get_accuracy(model, data):
     correct = 0
     total = 0
-    for imgs, labels in dataset:
+    for imgs, labels in torch.utils.data.DataLoader(data, batch_size=64):
 
 
         #############################################
         #To Enable GPU Usage
-        if use_cuda and torch.cuda.is_available():
+        if constants.use_cuda and torch.cuda.is_available():
           imgs = imgs.cuda()
           labels = labels.cuda()
         #############################################
@@ -48,8 +38,8 @@ def get_accuracy(model, type='train'):
         total += imgs.shape[0]
     return correct / total
 
-def train(model, data, batch_size=64, num_epochs=1, lr = 0.01):
-    train_loader = torch.utils.data.DataLoader(data, batch_size=batch_size, shuffle=True)
+def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr, momentum=0.9)
 
@@ -66,7 +56,7 @@ def train(model, data, batch_size=64, num_epochs=1, lr = 0.01):
 
             #############################################
             #To Enable GPU Usage
-            if use_cuda and torch.cuda.is_available():
+            if constants.use_cuda and torch.cuda.is_available():
               imgs = imgs.cuda()
               labels = labels.cuda()
             #############################################
@@ -94,9 +84,9 @@ def train(model, data, batch_size=64, num_epochs=1, lr = 0.01):
 
 
         print ("Epoch %d Finished. " % epoch ,"Time per Epoch: % 6.2f s "% ((time.time()-start_time) / (epoch +1)))
-        val = get_accuracy(model, 'val')
+        val = get_accuracy(model, val_data)
         val_accuracies.append(val)
-        model_path = "model_{0}_bs{1}_lr{2}_epoch{3}".format(model.name, batch_size, lr, epoch, val)
+        model_path = "Models/model_{0}_bs{1}_lr{2}_epoch{3}".format(model.name, batch_size, lr, epoch, val)
         torch.save(model.state_dict(), model_path)
 
 
@@ -146,7 +136,7 @@ def plot_spectrogram(specgram, title=None, ylabel="freq_bin", ax=None):
     if title is not None:
         ax.set_title(title)
     ax.set_ylabel(ylabel)
-    power_to_db = T.AmplitudeToDB("power", 80.0)
+    power_to_db = TA.AmplitudeToDB("power", 80.0)
     ax.imshow(power_to_db(specgram), origin="lower", aspect="auto", interpolation="nearest")
 
 #gotten from https://docs.pytorch.org/audio/stable/tutorials/audio_feature_extractions_tutorial.html
@@ -168,17 +158,17 @@ class MyPipeline(torch.nn.Module):
         super().__init__()
         self.target_samples = 8000 # 1 second at 8kHz
         
-        self.spec = T.Spectrogram(n_fft=n_fft, power=2)
+        self.spec = TA.Spectrogram(n_fft=n_fft, power=2)
 
         self.spec_aug = torch.nn.Sequential(
-            T.TimeStretch(stretch_factor, fixed_rate=True),
-            T.FrequencyMasking(freq_mask_param=15),
-            T.TimeMasking(time_mask_param=35),
+            TA.TimeStretch(stretch_factor, fixed_rate=True),
+            TA.FrequencyMasking(freq_mask_param=15),
+            TA.TimeMasking(time_mask_param=35),
         )
 
-        self.amplitude_to_db = T.AmplitudeToDB()
+        self.amplitude_to_db = TA.AmplitudeToDB()
 
-        self.mel_scale = T.MelScale(
+        self.mel_scale = TA.MelScale(
             n_mels=n_mel, sample_rate=8000, n_stft=n_fft // 2 + 1)
 
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
