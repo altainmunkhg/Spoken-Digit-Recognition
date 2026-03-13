@@ -33,7 +33,10 @@ val_data = data_processing.val_data
 #utils.train(model, train_data, val_data, num_epochs=20, batch_size=64, lr = 0.01)
 
 model.load_state_dict(torch.load("Models/ANNClassifier_bs64_lr0.01_epoch17_val0.7567"))
-print (f"Val Acc: {utils.get_accuracy(model, data_processing.test_data):.4f}")
+print (f"Test Acc: {utils.get_accuracy(model, data_processing.val_data):.4f}")
+print (f"Test Loss: {utils.get_loss(model, data_processing.val_data, nn.CrossEntropyLoss()):.4f}")
+print (f"Test Acc by Class: {utils.get_accuracy_by_class(model, data_processing.val_data)}")
+
 
 
 

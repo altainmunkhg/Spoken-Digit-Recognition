@@ -39,6 +39,32 @@ def get_accuracy(model, data):
         total += recording.shape[0]
     return correct / total
 
+def get_loss(model, data, criterion):
+    total_loss = 0.0
+    with torch.no_grad():
+        for recording, labels in torch.utils.data.DataLoader(data, batch_size=64):
+            output = model(recording)
+            loss = criterion(output, labels)
+            total_loss += loss.item() * recording.size(0)  
+    return total_loss / len(data)  
+
+def get_accuracy_by_class(model, data):
+    class_correct = [0] * 10
+    class_total = [0] * 10
+    for recording, labels in torch.utils.data.DataLoader(data, batch_size=64):
+        output = model(recording)
+        pred = output.max(1, keepdim=True)[1]
+        correct_tensor = pred.eq(labels.view_as(pred))
+        correct = correct_tensor.numpy()
+        
+        for i in range(len(labels)):
+            label = labels[i].item()
+            class_correct[label] += correct[i].item()
+            class_total[label] += 1
+
+    class_accuracy = [class_correct[i] / class_total[i] if class_total[i] > 0 else 0 for i in range(10)]
+    return class_accuracy
+
 def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
     criterion = nn.CrossEntropyLoss()
