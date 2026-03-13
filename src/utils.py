@@ -42,7 +42,7 @@ def get_accuracy(model, data):
 def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr)
+    optimizer = optim.Adam(model.parameters(), lr, weight_decay=1e-5)
 
     iters, losses, train_acc = [], [], []
     val_accuracies = []
@@ -155,12 +155,6 @@ class MyPipeline(torch.nn.Module):
         
         self.spec = TA.Spectrogram(n_fft=n_fft, power=2)
 
-        self.spec_aug = torch.nn.Sequential(
-            #TA.TimeStretch(stretch_factor, fixed_rate=True),
-            TA.FrequencyMasking(freq_mask_param=15),
-            TA.TimeMasking(time_mask_param=35),
-        )
-
         self.amplitude_to_db = TA.AmplitudeToDB()
 
         self.mel_scale = TA.MelScale(
@@ -177,13 +171,13 @@ class MyPipeline(torch.nn.Module):
         # Convert to power spectrogram
         spec = self.spec(waveform)
 
-        # Apply SpecAugment
-        spec = self.spec_aug(spec)
-
         # Convert to mel-scale
         mel = self.mel_scale(spec)
 
         output = self.amplitude_to_db(mel)
+
+        # Normalize
+        output = (output - output.mean()) / (output.std() + 1e-6)
 
         return output
     
@@ -207,4 +201,17 @@ class DatasetFolder(Dataset):
         if self.transform:
             waveform = self.transform(waveform)
             
+        return waveform, label
+    
+class dataToRNNType(Dataset):
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, idx):
+        waveform, label = self.dataset[idx]
+        # Reshape to (seq_len, input_size) for RNN
+        waveform = waveform.squeeze(0).transpose(0, 1)  # (32, 64)
         return waveform, label

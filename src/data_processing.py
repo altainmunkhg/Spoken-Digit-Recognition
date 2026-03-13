@@ -10,7 +10,7 @@ import torchaudio.transforms as T
 
 
 data_dir = 'Free Spoken Digit Dataset (FSDD)/recordings'
-data = utils.DatasetFolder(data_dir, transform=utils.MyPipeline())
+data = utils.dataToRNNType(utils.DatasetFolder(data_dir, transform=utils.MyPipeline()))
 
 #85% training, 10% validation, 5% testing
 train_size = int(0.85*len(data))
@@ -20,6 +20,10 @@ test_size = len(data) - train_size - val_size
 
 #split up the data into the diffrent datas
 train_data, val_data, test_data = torch.utils.data.random_split(data, [train_size,val_size, test_size])
+print(train_data[0][0].shape)
+print(train_data[0][1])
+#print(train_data[0][0])
+print(len(train_data[0]))
 
 #print out the stats
 print('Num total recordings: ', len(data))
