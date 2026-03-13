@@ -18,7 +18,8 @@ import torchaudio.transforms as T
 
 
 
-model = models.RNNClassifier(hidden_size=128, input_size=64, num_classes=10)
+#model = models.RNNClassifier(hidden_size=128, input_size=64, num_classes=10)
+model = models.ANNClassifier()
 if constants.use_cuda and torch.cuda.is_available():
   model.cuda()
   print('CUDA is available!  Training on GPU ...')
@@ -29,9 +30,10 @@ print(len(data_processing.train_data))
 train_data = data_processing.train_data
 print((train_data[0][0].shape))
 val_data = data_processing.val_data
-utils.train(model, train_data, val_data, num_epochs=10, batch_size=64, lr = 0.01)
-#model.load_state_dict(torch.load("Models/model_CNNClassifier_bs64_lr0.005_epoch16_val0.6700"))
-#print (f"Val Acc: {utils.get_accuracy(model, data_processing.val_data):.4f}")
+#utils.train(model, train_data, val_data, num_epochs=20, batch_size=64, lr = 0.01)
+
+model.load_state_dict(torch.load("Models/ANNClassifier_bs64_lr0.01_epoch17_val0.7567"))
+print (f"Val Acc: {utils.get_accuracy(model, data_processing.test_data):.4f}")
 
 
 

@@ -10,7 +10,7 @@ import torchaudio.transforms as T
 
 
 data_dir = 'Free Spoken Digit Dataset (FSDD)/recordings'
-data = utils.dataToRNNType(utils.DatasetFolder(data_dir, transform=utils.MyPipeline()))
+data = utils.DatasetFolder(data_dir, transform=utils.MyPipeline())
 
 #85% training, 10% validation, 5% testing
 train_size = int(0.85*len(data))

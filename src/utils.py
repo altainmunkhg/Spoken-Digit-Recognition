@@ -88,7 +88,7 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
         val = get_accuracy(model, val_data)
         val_accuracies.append(val)
         print(f"Epoch {epoch}, Val Acc: {val:.4f}")
-        model_path = "Models/model_{0}_bs{1}_lr{2}_epoch{3}_val{4:.4f}".format(model.name, batch_size, lr, epoch, val)
+        model_path = "Models/{0}_bs{1}_lr{2}_epoch{3}_val{4:.4f}".format(model.name, batch_size, lr, epoch, val)
         torch.save(model.state_dict(), model_path)
 
 
