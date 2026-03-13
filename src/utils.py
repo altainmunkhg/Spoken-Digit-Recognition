@@ -19,29 +19,30 @@ import constants
 def get_accuracy(model, data):
     correct = 0
     total = 0
-    for imgs, labels in torch.utils.data.DataLoader(data, batch_size=64):
+    for recording, labels in torch.utils.data.DataLoader(data, batch_size=64):
 
 
         #############################################
         #To Enable GPU Usage
         if constants.use_cuda and torch.cuda.is_available():
-          imgs = imgs.cuda()
+          recording = recording.cuda()
           labels = labels.cuda()
         #############################################
 
 
-        output = model(imgs)
+        output = model(recording)
 
         #select index with maximum prediction score
         pred = output.max(1, keepdim=True)[1]
         correct += pred.eq(labels.view_as(pred)).sum().item()
-        total += imgs.shape[0]
+        #print(recording.shape[0])
+        total += recording.shape[0]
     return correct / total
 
 def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
     train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(model.parameters(), lr, momentum=0.9)
+    optimizer = optim.Adam(model.parameters(), lr)
 
     iters, losses, train_acc = [], [], []
     val_accuracies = []
@@ -51,18 +52,18 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
     start_time=time.time()
     for epoch in range(num_epochs):
         mini_b=0
-        for imgs, labels in iter(train_loader):
+        for recording, labels in iter(train_loader):
 
 
             #############################################
             #To Enable GPU Usage
             if constants.use_cuda and torch.cuda.is_available():
-              imgs = imgs.cuda()
+              recording = recording.cuda()
               labels = labels.cuda()
             #############################################
 
 
-            out = model(imgs)             # forward pass
+            out = model(recording)             # forward pass
             loss = criterion(out, labels) # compute the total loss
             loss.backward()               # backward pass (compute parameter updates)
             optimizer.step()              # make the updates for each parameter
@@ -71,13 +72,13 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
             ##### Mini_batch Accuracy ##### We don't compute accuracy on the whole training set in every iteration!
             pred = out.max(1, keepdim=True)[1]
             mini_batch_correct = pred.eq(labels.view_as(pred)).sum().item()
-            Mini_batch_total = imgs.shape[0]
+            Mini_batch_total = recording.shape[0]
             train_acc.append((mini_batch_correct / Mini_batch_total))
            ###########################
 
           # save the current training information
             iters.append(n)
-            losses.append(float(loss)/batch_size)             # compute *average* loss
+            losses.append(loss.item()/batch_size)             # compute *average* loss
             n += 1
             mini_b += 1
             #print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s " % (time.time()-start_time))
@@ -86,22 +87,16 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
         print ("Epoch %d Finished. " % epoch ,"Time per Epoch: % 6.2f s "% ((time.time()-start_time) / (epoch +1)))
         val = get_accuracy(model, val_data)
         val_accuracies.append(val)
-        model_path = "Models/model_{0}_bs{1}_lr{2}_epoch{3}".format(model.name, batch_size, lr, epoch, val)
+        print(f"Epoch {epoch}, Val Acc: {val:.4f}")
+        model_path = "Models/model_{0}_bs{1}_lr{2}_epoch{3}_val{4:.4f}".format(model.name, batch_size, lr, epoch, val)
         torch.save(model.state_dict(), model_path)
 
 
     # Prepare val_acc for plotting
-    val_acc_for_plot = []
+    val_acc_for_plot = []   
     num_iterations_per_epoch = len(train_loader)
     for epoch_idx in range(num_epochs):
         val_acc_for_plot.extend([val_accuracies[epoch_idx]] * num_iterations_per_epoch)
-
-    # plotting
-    plt.title("Training Curve")
-    plt.plot(iters, losses, label="Train")
-    plt.xlabel("Iterations")
-    plt.ylabel("Loss")
-    plt.show()
 
     plt.title("Training Curve")
     plt.plot(iters, train_acc, label="Train")
@@ -161,7 +156,7 @@ class MyPipeline(torch.nn.Module):
         self.spec = TA.Spectrogram(n_fft=n_fft, power=2)
 
         self.spec_aug = torch.nn.Sequential(
-            TA.TimeStretch(stretch_factor, fixed_rate=True),
+            #TA.TimeStretch(stretch_factor, fixed_rate=True),
             TA.FrequencyMasking(freq_mask_param=15),
             TA.TimeMasking(time_mask_param=35),
         )

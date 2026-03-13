@@ -17,10 +17,11 @@ train_size = int(0.85*len(data))
 val_size = int(0.10*len(data))
 test_size = len(data) - train_size - val_size
 
+
 #split up the data into the diffrent datas
 train_data, val_data, test_data = torch.utils.data.random_split(data, [train_size,val_size, test_size])
 
-#print out some stats
+#print out the stats
 print('Num total recordings: ', len(data))
 print('Num training recordings: ', len(train_data))
 print('Num validation recordings: ', len(val_data))

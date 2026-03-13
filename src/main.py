@@ -18,7 +18,7 @@ import torchaudio.transforms as T
 
 
 
-model = models.ANNClassifier()
+model = models.CNNClassifier()
 if constants.use_cuda and torch.cuda.is_available():
   model.cuda()
   print('CUDA is available!  Training on GPU ...')
@@ -27,5 +27,11 @@ else:
 
 print(len(data_processing.train_data))
 
-utils.train(model, data_processing.train_data, data_processing.val_data, num_epochs=10, batch_size=64, lr = 0.005)
+#utils.train(model, data_processing.train_data, data_processing.val_data, num_epochs=20, batch_size=64, lr = 0.005)
+model.load_state_dict(torch.load("Models/model_CNNClassifier_bs64_lr0.005_epoch16_val0.6700"))
+print (f"Test Acc: {utils.get_accuracy(model, data_processing.val_data):.4f}")
+
+
+
+
 
