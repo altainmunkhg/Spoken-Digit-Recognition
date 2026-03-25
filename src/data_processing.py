@@ -7,26 +7,45 @@ import matplotlib.pyplot as plt
 import torch.optim as optim
 import torchaudio
 import torchaudio.transforms as T
+import numpy as np
+
 
 
 data_dir = 'Free Spoken Digit Dataset (FSDD)/recordings'
-data = utils.DatasetFolder(data_dir, transform=utils.MyPipeline())
 
-#85% training, 10% validation, 5% testing
-train_size = int(0.85*len(data))
-val_size = int(0.10*len(data))
-test_size = len(data) - train_size - val_size
+
+unmodified_data = utils.dataset_from_file(data_dir)
+
 
 
 #split up the data into the diffrent datas
-train_data, val_data, test_data = torch.utils.data.random_split(data, [train_size,val_size, test_size])
-print(train_data[0][0].shape)
-print(train_data[0][1])
-#print(train_data[0][0])
-print(len(train_data[0]))
+training_unaugmented_size = int (0.5*len(unmodified_data))
+val_size = int(0.25*len(unmodified_data))
+test_size = len(unmodified_data)  - val_size - training_unaugmented_size
+training_unaugmented_data, val_data, test_data = torch.utils.data.random_split(unmodified_data, [training_unaugmented_size, val_size, test_size])
 
+
+#data augmentation
+heavy_noise_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
+                                                            utils.add_noise_transform(snr_min=10, snr_max = 20),
+                                                            utils.MyPipeline()
+                                                            ]))
+light_noise_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
+                                                            utils.add_noise_transform(snr_min=3, snr_max = 10),
+                                                            utils.MyPipeline()
+                                                            ]))
+pitch_up_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
+                                                            T.PitchShift(sample_rate=8000, n_steps=2),
+                                                            utils.MyPipeline()
+                                                            ]))
+pitch_down_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
+                                                            T.PitchShift(sample_rate=8000, n_steps=-2),
+                                                            utils.MyPipeline()
+                                                            ]))
+train_data = torch.utils.data.ConcatDataset([training_unaugmented_data, heavy_noise_data, light_noise_data, pitch_down_data, pitch_up_data])
 #print out the stats
-print('Num total recordings: ', len(data))
+print('Num augmented recordings: ', len(train_data))
+print('Num unaugmented recording: ', len(unmodified_data))
 print('Num training recordings: ', len(train_data))
 print('Num validation recordings: ', len(val_data))
 print('Num testing recordings: ', len(test_data))

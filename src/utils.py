@@ -16,6 +16,9 @@ import torchaudio.transforms as TA
 from torch.utils.data import Dataset, DataLoader
 import constants
 
+import multiprocessing
+
+
 def get_accuracy(model, data):
     correct = 0
     total = 0
@@ -65,21 +68,32 @@ def get_accuracy_by_class(model, data):
     class_accuracy = [class_correct[i] / class_total[i] if class_total[i] > 0 else 0 for i in range(10)]
     return class_accuracy
 
-def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=batch_size, shuffle=True)
+def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, name = "unnamed"):
+    num_workers = multiprocessing.cpu_count() -1
+    train_loader = torch.utils.data.DataLoader(train_data,
+                                               batch_size=batch_size, 
+                                               shuffle=True, 
+                                               num_workers=num_workers,
+                                               prefetch_factor=2,      
+                                               persistent_workers=True)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr, weight_decay=1e-5)
+    optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=1e-5)
 
     iters, losses, train_acc = [], [], []
     val_accuracies = []
 
     # training
     n = 0 # the number of iterations
+    best_val = 0
     start_time=time.time()
     for epoch in range(num_epochs):
         mini_b=0
-        for recording, labels in iter(train_loader):
+        model.train()
 
+        for recording, labels in iter(train_loader):
+            if (n % 10 == 0):
+                print("*", end = "")
+            
 
             #############################################
             #To Enable GPU Usage
@@ -109,14 +123,18 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01):
             mini_b += 1
             #print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s " % (time.time()-start_time))
 
-
+        model.eval()
         print ("Epoch %d Finished. " % epoch ,"Time per Epoch: % 6.2f s "% ((time.time()-start_time) / (epoch +1)))
-        val = get_accuracy(model, val_data)
+        with torch.no_grad():
+            val = get_accuracy(model, val_data)
         val_accuracies.append(val)
         print(f"Epoch {epoch}, Val Acc: {val:.4f}")
-        model_path = "Models/{0}_bs{1}_lr{2}_epoch{3}_val{4:.4f}".format(model.name, batch_size, lr, epoch, val)
-        torch.save(model.state_dict(), model_path)
-
+        if val > best_val:
+            best_val = val
+            model_path = "Models/{0}_{1}_bs{2}_lr{3}_epoch{4}_val{5:.4f}".format(name, model.name, batch_size, lr, epoch, val)
+            torch.save(model.state_dict(), model_path)
+            print(f"New best model saved (val={val:.4f})")
+        
 
     # Prepare val_acc for plotting
     val_acc_for_plot = []   
@@ -207,7 +225,7 @@ class MyPipeline(torch.nn.Module):
 
         return output
     
-class DatasetFolder(Dataset):
+class dataset_from_file(Dataset):
     def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
         self.filenames = [f for f in os.listdir(data_dir) if f.endswith('.wav')]
@@ -229,7 +247,24 @@ class DatasetFolder(Dataset):
             
         return waveform, label
     
-class dataToRNNType(Dataset):
+class dataset_from_list(Dataset):
+    def __init__(self, data, transform=None):
+        self.data = data
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):        
+        waveform = self.data[0][idx]
+        label = self.data[1][idx]
+        
+        if self.transform:
+            waveform = self.transform(waveform)
+            
+        return waveform, label
+    
+class data_To_RNN_Type(Dataset):
     def __init__(self, dataset):
         self.dataset = dataset
 
@@ -241,3 +276,14 @@ class dataToRNNType(Dataset):
         # Reshape to (seq_len, input_size) for RNN
         waveform = waveform.squeeze(0).transpose(0, 1)  # (32, 64)
         return waveform, label
+
+class add_noise_transform:
+    def __init__(self, snr_min=5, snr_max = 20):
+        #snr = signal to noise ratio
+        self.snr_min = snr_min
+        self.snr_max = snr_max
+
+    def __call__(self, waveform):
+        snr_db = torch.FloatTensor(1).uniform_(self.snr_min, self.snr_max)
+        noise = torch.randn_like(waveform)
+        return TA.AddNoise()(waveform, noise, snr_db)
