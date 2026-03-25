@@ -16,7 +16,6 @@ import torchaudio.transforms as TA
 from torch.utils.data import Dataset, DataLoader
 import constants
 
-import multiprocessing
 
 
 def get_accuracy(model, data):
@@ -69,13 +68,10 @@ def get_accuracy_by_class(model, data):
     return class_accuracy
 
 def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, name = "unnamed"):
-    num_workers = multiprocessing.cpu_count() -1
     train_loader = torch.utils.data.DataLoader(train_data,
                                                batch_size=batch_size, 
                                                shuffle=True, 
-                                               num_workers=num_workers,
-                                               prefetch_factor=2,      
-                                               persistent_workers=True)
+                                               )
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=1e-5)
 
@@ -91,10 +87,6 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, na
         model.train()
 
         for recording, labels in iter(train_loader):
-            if (n % 10 == 0):
-                print("*", end = "")
-            
-
             #############################################
             #To Enable GPU Usage
             if constants.use_cuda and torch.cuda.is_available():
@@ -109,7 +101,7 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, na
             optimizer.step()              # make the updates for each parameter
             optimizer.zero_grad()         # a clean up step for PyTorch
 
-            ##### Mini_batch Accuracy ##### We don't compute accuracy on the whole training set in every iteration!
+            ##### Mini_batch Accuracy ##### 
             pred = out.max(1, keepdim=True)[1]
             mini_batch_correct = pred.eq(labels.view_as(pred)).sum().item()
             Mini_batch_total = recording.shape[0]
@@ -121,7 +113,7 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, na
             losses.append(loss.item()/batch_size)             # compute *average* loss
             n += 1
             mini_b += 1
-            #print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s " % (time.time()-start_time))
+            print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s" % (time.time()-start_time), "Training acc: ",mini_batch_correct/Mini_batch_total)
 
         model.eval()
         print ("Epoch %d Finished. " % epoch ,"Time per Epoch: % 6.2f s "% ((time.time()-start_time) / (epoch +1)))
@@ -256,8 +248,7 @@ class dataset_from_list(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):        
-        waveform = self.data[0][idx]
-        label = self.data[1][idx]
+        waveform, label = self.data[idx]
         
         if self.transform:
             waveform = self.transform(waveform)

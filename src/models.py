@@ -31,7 +31,7 @@ class CNNClassifier(nn.Module):
     def forward(self, x):
         x = self.pool(F.relu(self.conv1(x)))
         x = self.pool(F.relu(self.conv2(x)))
-        x = x.view(-1, 13*5*10)
+        x = x.view(x.size(0), -1)
         x = F.relu(self.layer1(x))
         output = self.layer2(x)
         return output

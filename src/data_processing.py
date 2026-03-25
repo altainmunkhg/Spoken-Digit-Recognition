@@ -34,15 +34,12 @@ light_noise_data = utils.dataset_from_list(training_unaugmented_data, transform=
                                                             utils.add_noise_transform(snr_min=3, snr_max = 10),
                                                             utils.MyPipeline()
                                                             ]))
-pitch_up_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
-                                                            T.PitchShift(sample_rate=8000, n_steps=2),
-                                                            utils.MyPipeline()
-                                                            ]))
-pitch_down_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
-                                                            T.PitchShift(sample_rate=8000, n_steps=-2),
-                                                            utils.MyPipeline()
-                                                            ]))
-train_data = torch.utils.data.ConcatDataset([training_unaugmented_data, heavy_noise_data, light_noise_data, pitch_down_data, pitch_up_data])
+
+training_unaugmented_data = utils.dataset_from_list(training_unaugmented_data, transform=utils.MyPipeline())
+train_data = torch.utils.data.ConcatDataset([training_unaugmented_data, heavy_noise_data, light_noise_data])
+val_data = utils.dataset_from_list(val_data, transform=utils.MyPipeline())
+#test_data = utils.dataset_from_list(test_data, transform=utils.MyPipeline())
+
 #print out the stats
 print('Num augmented recordings: ', len(train_data))
 print('Num unaugmented recording: ', len(unmodified_data))
