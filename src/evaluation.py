@@ -43,8 +43,8 @@ noisy_test = utils.dataset_from_list(
 pitch_up_test = utils.dataset_from_list(
     data_processing.test_data,
     transform=transforms.Compose([
+        T.PitchShift(sample_rate=8000, n_steps=2),   
         utils.add_noise_transform(snr_min=5, snr_max=10),
-        T.PitchShift(sample_rate = 8000, n_steps = 2),
         utils.MyPipeline()
     ])
 )
@@ -52,41 +52,39 @@ pitch_up_test = utils.dataset_from_list(
 pitch_down_test = utils.dataset_from_list(
     data_processing.test_data,
     transform=transforms.Compose([
+        T.PitchShift(sample_rate=8000, n_steps=-2), 
         utils.add_noise_transform(snr_min=5, snr_max=10),
-        T.PitchShift(sample_rate = 8000, n_steps = -2),
         utils.MyPipeline()
     ])
 )
 
-
-#getting the accuracy of the models
-clean_acc_clean_model = utils.get_accuracy(model_unaugment, clean_test)
-noisy_acc_clean_model = utils.get_accuracy(model_unaugment, noisy_test)
-pitch_up_acc_clean_model = utils.get_accuracy(model_unaugment, pitch_up_test)
-pitch_down_acc_clean_model = utils.get_accuracy(model_unaugment, pitch_down_test)
-
-clean_acc_augment_model = utils.get_accuracy(model_augment, clean_test)
-noisy_acc_aug_model   = utils.get_accuracy(model_augment, noisy_test)
-pitch_up_acc_aug_model = utils.get_accuracy(model_augment, pitch_up_test)
-pitch_down_acc_aug_model = utils.get_accuracy(model_augment, pitch_down_test)
-
-clean_acc_pitch_model = utils.get_accuracy(model_pitch_augment, clean_test)
-noisy_acc_pitch_model   = utils.get_accuracy(model_pitch_augment, noisy_test)
-pitch_up_acc_pitch_model = utils.get_accuracy(model_pitch_augment, pitch_up_test)
-pitch_down_acc_pitch_model = utils.get_accuracy(model_pitch_augment, pitch_down_test)
+self_recorded_data = utils.dataset_from_file('self_recorded/Altai', transform=utils.MyPipeline())
 
 
-#print results
-print(f"Clean model on clean audio: {clean_acc_clean_model: .4f}, noisy audio : {noisy_acc_clean_model: .4f}, Pitch up: {pitch_up_acc_clean_model: .4f}, Pitch down: {pitch_down_acc_clean_model: .4f}")
-print(f"Aug model on clean audio: {clean_acc_augment_model: .4f}, noisy audio : {noisy_acc_aug_model: .4f}, Pitch up: {pitch_up_acc_aug_model: .4f}, Pitch down: {pitch_down_acc_aug_model: .4f}")
-print(f"Pitch model on clean audio: {clean_acc_pitch_model: .4f}, noisy audio : {noisy_acc_pitch_model: .4f}, Pitch up: {pitch_up_acc_pitch_model: .4f}, Pitch down: {pitch_down_acc_pitch_model: .4f}")
+test_datasets = {
+    "Clean"        : clean_test,
+    "Noisy"        : noisy_test,
+    "Pitch Up"     : pitch_up_test,
+    "Pitch Down"   : pitch_down_test,
+    "Self Recorded": self_recorded_data,
+}
 
+eval_models = {
+    "Augmented"       : model_augment,
+    "Pitch Augmented" : model_pitch_augment,
+    "Unaugmented"     : model_unaugment,
+}
 
-#self_recorded_data = utils.dataset_from_file('self_recorded/Altai', transform=utils.MyPipeline())
-#self_recorded_acc = utils.get_accuracy(model_augment, self_recorded_data)
-#print(f"Self recorded acc: {self_recorded_acc: .4f}")
-#print (utils.get_accuracy_by_class(model_augment, self_recorded_data))
+#getting the accuracy of the models as table
+header = f"{'Dataset':<16}" + "".join(f"{name:>18}" for name in eval_models)
+print(header)
+print("-" * (16 + 18 * len(eval_models)))
 
-
+for dataset_name, dataset in test_datasets.items():
+    row = f"{dataset_name:<16}"
+    for model_name, model in eval_models.items():
+        acc  = utils.get_accuracy(model, dataset)
+        row += f"{acc:>17.1%} "
+    print(row)
 
 

@@ -312,7 +312,7 @@ class retreive_from_file(Dataset):
 
 
 def record_and_save(save_path, sample_rate=8000, duration=1):
-    print(f"Recording for {duration}s... Speak now")
+    print(f"Recording. Speak now")
     audio = sd.rec(
         int(duration * sample_rate),
         samplerate=sample_rate,
