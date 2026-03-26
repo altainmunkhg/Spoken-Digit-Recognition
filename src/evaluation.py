@@ -19,11 +19,11 @@ import torchaudio.transforms as T
 #models being elavuated
 model_augment = models.CNNClassifier()
 model_unaugment = models.CNNClassifier()
-model_pitch_augment = models.CNNClassifier()
+model_pitch_augment = models.CNNClassifierv2()
 
 model_augment.load_state_dict(torch.load("Models/augmented_data_CNNClassifier_bs256_lr0.01_epoch25_val0.9547"))
 model_unaugment.load_state_dict(torch.load("Models/CNNClassifier_bs64_lr0.01_epoch19_val0.9767"))
-model_pitch_augment.load_state_dict(torch.load("Models/augmented_pitched_data_CNNClassifier_bs256_lr0.01_epoch19_val0.9360"))
+model_pitch_augment.load_state_dict(torch.load("Models/pitched_data_CNNClassifier_v2_bs256_lr0.01_epoch19_val0.9773"))
 
 
 #the test datasets being run
@@ -71,18 +71,21 @@ pitch_up_acc_aug_model = utils.get_accuracy(model_augment, pitch_up_test)
 pitch_down_acc_aug_model = utils.get_accuracy(model_augment, pitch_down_test)
 
 clean_acc_pitch_model = utils.get_accuracy(model_pitch_augment, clean_test)
-noisy_acc_pitch_model   = utils.get_accuracy(model_augment, noisy_test)
-pitch_up_acc_pitch_model = utils.get_accuracy(model_augment, pitch_up_test)
-pitch_down_acc_pitch_model = utils.get_accuracy(model_augment, pitch_down_test)
+noisy_acc_pitch_model   = utils.get_accuracy(model_pitch_augment, noisy_test)
+pitch_up_acc_pitch_model = utils.get_accuracy(model_pitch_augment, pitch_up_test)
+pitch_down_acc_pitch_model = utils.get_accuracy(model_pitch_augment, pitch_down_test)
 
 
 #print results
-print(f"Clean model on clean audio: {clean_acc_clean_model: }, noisy audio : {noisy_acc_clean_model}, Pitch up: {pitch_up_acc_clean_model}, Pitch down: {pitch_down_acc_clean_model}")
-print(f"Aug model on clean audio: {clean_acc_augment_model}, noisy audio : {noisy_acc_aug_model}, Pitch up: {pitch_up_acc_aug_model}, Pitch down: {pitch_down_acc_aug_model}")
-print(f"Pitch model on clean audio: {clean_acc_pitch_model}, noisy audio : {noisy_acc_pitch_model}, Pitch up: {pitch_up_acc_pitch_model}, Pitch down: {pitch_down_acc_pitch_model}")
+print(f"Clean model on clean audio: {clean_acc_clean_model: .4f}, noisy audio : {noisy_acc_clean_model: .4f}, Pitch up: {pitch_up_acc_clean_model: .4f}, Pitch down: {pitch_down_acc_clean_model: .4f}")
+print(f"Aug model on clean audio: {clean_acc_augment_model: .4f}, noisy audio : {noisy_acc_aug_model: .4f}, Pitch up: {pitch_up_acc_aug_model: .4f}, Pitch down: {pitch_down_acc_aug_model: .4f}")
+print(f"Pitch model on clean audio: {clean_acc_pitch_model: .4f}, noisy audio : {noisy_acc_pitch_model: .4f}, Pitch up: {pitch_up_acc_pitch_model: .4f}, Pitch down: {pitch_down_acc_pitch_model: .4f}")
 
 
-
+#self_recorded_data = utils.dataset_from_file('self_recorded/Altai', transform=utils.MyPipeline())
+#self_recorded_acc = utils.get_accuracy(model_augment, self_recorded_data)
+#print(f"Self recorded acc: {self_recorded_acc: .4f}")
+#print (utils.get_accuracy_by_class(model_augment, self_recorded_data))
 
 
 

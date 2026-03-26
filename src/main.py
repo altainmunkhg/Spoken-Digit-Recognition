@@ -16,11 +16,11 @@ import constants
 import torchaudio
 import torchaudio.transforms as T
 
-model = models.CNNClassifier()
+model = models.CNNClassifierv2()
 
 train_data = data_processing.train_data
 val_data = data_processing.val_data
-utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "augmented_pitched_data")
+utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "pitched_data")
 
 
 

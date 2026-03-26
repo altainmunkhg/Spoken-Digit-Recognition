@@ -53,3 +53,22 @@ class RNNClassifier(nn.Module):
         # Pass the output of the last time step to the classifier
         out = self.layer1(out[:, -1, :])
         return out
+
+class CNNClassifierv2(nn.Module):
+    def __init__(self):
+        super(CNNClassifierv2, self).__init__()
+        self.name = "CNNClassifier_v2"
+        self.conv1 = nn.Conv2d(1, 16, 3, padding=1)   
+        self.conv2 = nn.Conv2d(16, 32, 3, padding=1)
+        self.conv3 = nn.Conv2d(32, 64, 3, padding=1)  
+        self.pool  = nn.MaxPool2d(2, 2)
+        self.layer1 = nn.Linear(64 * 8 * 4, 256)     
+        self.layer2 = nn.Linear(256, 10)
+
+    def forward(self, x):
+        x = self.pool(F.relu(self.conv1(x)))
+        x = self.pool(F.relu(self.conv2(x)))
+        x = self.pool(F.relu(self.conv3(x)))
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.layer1(x))
+        return self.layer2(x)

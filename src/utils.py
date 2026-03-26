@@ -312,15 +312,14 @@ class retreive_from_file(Dataset):
 
 
 def record_and_save(save_path, sample_rate=8000, duration=1):
-    print(f"Recording for {duration}s... Speak now!")
-    
+    print(f"Recording for {duration}s... Speak now")
     audio = sd.rec(
         int(duration * sample_rate),
         samplerate=sample_rate,
         channels=1,
         dtype='float32'
     )
-    sd.wait()  # Wait until recording is done
+    sd.wait() 
     print("Done!")
 
     # Convert to tensor and save
@@ -328,3 +327,18 @@ def record_and_save(save_path, sample_rate=8000, duration=1):
     torchaudio.save(save_path, waveform, sample_rate)
     print(f"Saved to {save_path}")
     return waveform
+
+def record_to_database(speaker_name, db_dir="self_recorded", sample_rate=8000, repeats=5):
+    speaker_dir = os.path.join(db_dir, speaker_name)
+    os.makedirs(speaker_dir, exist_ok=True)
+
+    print("Recording for speaker: {speaker_name}")
+
+    for digit in range(10):
+        for rep in range(repeats):
+            input(f"Press ENTER to record digit '{digit}'")
+
+            save_path = os.path.join(speaker_dir, f"{digit}_{speaker_name}_{rep}.wav")
+            record_and_save(save_path, sample_rate=sample_rate)
+
+    print(f"Saved {repeats * 10} recordings to {speaker_dir}/")
