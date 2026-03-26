@@ -16,6 +16,7 @@ import torchaudio.transforms as TA
 from torch.utils.data import Dataset, DataLoader
 import constants
 
+import sounddevice as sd
 
 
 def get_accuracy(model, data):
@@ -278,3 +279,52 @@ class add_noise_transform:
         snr_db = torch.FloatTensor(1).uniform_(self.snr_min, self.snr_max)
         noise = torch.randn_like(waveform)
         return TA.AddNoise()(waveform, noise, snr_db)
+
+def save_to_files(dataset, dir):
+    os.makedirs(dir, exist_ok=True)
+    for idx in range(len(dataset)):
+        save_path = os.path.join(dir, f"recording_{idx}.pt")
+        if not os.path.exists(save_path):          
+            waveform, label = dataset[idx]
+            torch.save((waveform, label), save_path)
+    print(f"Saved {len(dataset)} recordings to {dir}")
+
+class retreive_from_file(Dataset):
+    def __init__(self, data_dir, transform=None):
+        self.data_dir = data_dir
+        self.files    = sorted(
+            [f for f in os.listdir(data_dir) if f.endswith('.pt')],
+            key=lambda x: int(x.split('_')[1].split('.')[0]) 
+        )
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.files)
+
+    def __getitem__(self, idx):
+        file_path      = os.path.join(self.data_dir, self.files[idx])
+        waveform, label = torch.load(file_path)
+
+        if self.transform:
+            waveform = self.transform(waveform)
+
+        return waveform, label
+
+
+def record_and_save(save_path, sample_rate=8000, duration=1):
+    print(f"Recording for {duration}s... Speak now!")
+    
+    audio = sd.rec(
+        int(duration * sample_rate),
+        samplerate=sample_rate,
+        channels=1,
+        dtype='float32'
+    )
+    sd.wait()  # Wait until recording is done
+    print("Done!")
+
+    # Convert to tensor and save
+    waveform = torch.tensor(audio.T)   # [1, samples]
+    torchaudio.save(save_path, waveform, sample_rate)
+    print(f"Saved to {save_path}")
+    return waveform
