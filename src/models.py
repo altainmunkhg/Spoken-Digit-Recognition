@@ -46,11 +46,8 @@ class RNNClassifier(nn.Module):
         self.layer1 = nn.Linear(hidden_size, num_classes)
 
     def forward(self, x):
-        # Set an initial hidden state
         h0 = torch.zeros(1, x.size(0), self.hidden_size)
-        # Forward propagate the RNN
         out, _ = self.rnn(x, h0)
-        # Pass the output of the last time step to the classifier
         out = self.layer1(out[:, -1, :])
         return out
 
@@ -72,3 +69,19 @@ class CNNClassifierv2(nn.Module):
         x = x.view(x.size(0), -1)
         x = F.relu(self.layer1(x))
         return self.layer2(x)
+    
+class GRUClassifier(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(GRUClassifier, self).__init__()
+        self.name = "GRUClassifier"
+        self.hidden_size = hidden_size
+        self.num_classes = num_classes
+        self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size, batch_first=True)
+        self.layer1 = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        x = x.squeeze(1)  
+        h0 = torch.zeros(1, x.size(0), self.hidden_size)
+        out, _ = self.gru(x, h0)
+        out = self.layer1(out[:, -1, :])
+        return out

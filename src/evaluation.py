@@ -20,10 +20,12 @@ import torchaudio.transforms as T
 model_augment = models.CNNClassifier()
 model_unaugment = models.CNNClassifier()
 model_pitch_augment = models.CNNClassifierv2()
+model_gru = models.GRUClassifier(input_size=32, hidden_size=128, num_classes=10)
 
 model_augment.load_state_dict(torch.load("Models/augmented_data_CNNClassifier_bs256_lr0.01_epoch25_val0.9547"))
 model_unaugment.load_state_dict(torch.load("Models/CNNClassifier_bs64_lr0.01_epoch19_val0.9767"))
 model_pitch_augment.load_state_dict(torch.load("Models/pitched_data_CNNClassifier_v2_bs256_lr0.01_epoch19_val0.9773"))
+model_gru.load_state_dict(torch.load("Models/GRU_GRUClassifier_bs256_lr0.01_epoch13_val0.9640"))
 
 
 #the test datasets being run
@@ -73,6 +75,7 @@ eval_models = {
     "Augmented"       : model_augment,
     "Pitch Augmented" : model_pitch_augment,
     "Unaugmented"     : model_unaugment,
+    'GRU'             : model_gru
 }
 
 #getting the accuracy of the models as table

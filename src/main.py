@@ -16,11 +16,13 @@ import constants
 import torchaudio
 import torchaudio.transforms as T
 
-model = models.CNNClassifierv2()
-
 train_data = data_processing.train_data
 val_data = data_processing.val_data
-utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "pitched_data")
+
+model = models.GRUClassifier(input_size=train_data[0][0].size(2), hidden_size=128, num_classes=10)
+
+
+utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "GRU")
 
 
 
