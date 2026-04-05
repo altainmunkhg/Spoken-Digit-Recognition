@@ -22,7 +22,7 @@ val_data = data_processing.val_data
 model = models.GRUClassifier(input_size=train_data[0][0].size(2), hidden_size=128, num_classes=10)
 
 
-utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "GRU")
+utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "_")
 
 
 

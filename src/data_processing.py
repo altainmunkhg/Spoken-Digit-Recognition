@@ -28,33 +28,33 @@ training_unaugmented_data, val_data, test_data = torch.utils.data.random_split(u
 #data augmentation
 heavy_noise_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             utils.add_noise_transform(snr_min=10, snr_max = 20),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 light_noise_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             utils.add_noise_transform(snr_min=3, snr_max = 10),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 pitch_up_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             T.PitchShift(sample_rate=8000, n_steps=6),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 pitch_down_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             T.PitchShift(sample_rate=8000, n_steps=-6),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 pitch_down_noisy_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             T.PitchShift(sample_rate=8000, n_steps=-6),
                                                             utils.add_noise_transform(snr_min=3, snr_max = 10),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 pitch_up_noisy_data = utils.dataset_from_list(training_unaugmented_data, transform= transforms.Compose([
                                                             T.PitchShift(sample_rate=8000, n_steps=6),
                                                             utils.add_noise_transform(snr_min=3, snr_max = 10),
-                                                            utils.MyPipeline()
+                                                            utils.MyPipeline(train=True)
                                                             ]))
 
-training_unaugmented_data = utils.dataset_from_list(val_data, transform=utils.MyPipeline())
-val_data = utils.dataset_from_list(val_data, transform=utils.MyPipeline())
+training_unaugmented_data = utils.dataset_from_list(val_data, transform=utils.MyPipeline(train=True))
+val_data = utils.dataset_from_list(val_data, transform=utils.MyPipeline(train=True))
 test_data = utils.dataset_from_list(test_data, transform=None)
 
 #utils.save_to_files(pitch_up_data, "src/augmentedData/pitch_up")

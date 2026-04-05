@@ -114,7 +114,8 @@ def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, na
             losses.append(loss.item()/batch_size)             # compute *average* loss
             n += 1
             mini_b += 1
-            print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s" % (time.time()-start_time), "Training acc: ",mini_batch_correct/Mini_batch_total)
+            if mini_b % 10 == 0:
+                print("Iteration: ",n,'Progress: % 6.2f ' % ((epoch * len(train_loader) + mini_b) / (num_epochs * len(train_loader))*100),'%', "Time Elapsed: % 6.2f s" % (time.time()-start_time), "Training acc: ",mini_batch_correct/Mini_batch_total)
 
         model.eval()
         print ("Epoch %d Finished. " % epoch ,"Time per Epoch: % 6.2f s "% ((time.time()-start_time) / (epoch +1)))
@@ -186,8 +187,10 @@ class MyPipeline(torch.nn.Module):
         n_fft=512,
         n_mel=64,
         stretch_factor=0.8,
+        train=False
     ):
         super().__init__()
+        self.train = train
         self.target_samples = 8000 # 1 second at 8kHz
         
         self.spec = TA.Spectrogram(n_fft=n_fft, power=2)
@@ -196,6 +199,9 @@ class MyPipeline(torch.nn.Module):
 
         self.mel_scale = TA.MelScale(
             n_mels=n_mel, sample_rate=8000, n_stft=n_fft // 2 + 1)
+        
+        self.frequency_mask = TA.FrequencyMasking(freq_mask_param=6)
+        self.time_mask = TA.TimeMasking(time_mask_param=4)
 
     def forward(self, waveform: torch.Tensor) -> torch.Tensor:
         # Pad or truncate to 8k samples
@@ -211,13 +217,18 @@ class MyPipeline(torch.nn.Module):
         # Convert to mel-scale
         mel = self.mel_scale(spec)
 
-        output = self.amplitude_to_db(mel)
+        mel = self.amplitude_to_db(mel)
 
         # Normalize
-        output = (output - output.mean()) / (output.std() + 1e-6)
+        output = (mel - mel.mean()) / (mel.std() + 1e-8)
+
+        if (self.train):
+            output = self.frequency_mask(output)
+            output = self.time_mask(output)
 
         return output
     
+        
 class dataset_from_file(Dataset):
     def __init__(self, data_dir, transform=None):
         self.data_dir = data_dir
