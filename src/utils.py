@@ -57,6 +57,7 @@ def get_accuracy_by_class(model, data):
     for recording, labels in torch.utils.data.DataLoader(data, batch_size=64):
         output = model(recording)
         pred = output.max(1, keepdim=True)[1]
+
         correct_tensor = pred.eq(labels.view_as(pred))
         correct = correct_tensor.numpy()
         
@@ -66,6 +67,8 @@ def get_accuracy_by_class(model, data):
             class_total[label] += 1
 
     class_accuracy = [class_correct[i] / class_total[i] if class_total[i] > 0 else 0 for i in range(10)]
+
+    
     return class_accuracy
 
 def train(model, train_data,val_data, batch_size=64, num_epochs=1, lr = 0.01, name = "unnamed"):
@@ -339,7 +342,7 @@ def record_and_save(save_path, sample_rate=8000, duration=1):
     print(f"Saved to {save_path}")
     return waveform
 
-def record_to_database(speaker_name, db_dir="self_recorded", sample_rate=8000, repeats=5):
+def record_to_database(speaker_name, db_dir="self_recorded", sample_rate=8000, repeats=5, extra = ""):
     speaker_dir = os.path.join(db_dir, speaker_name)
     os.makedirs(speaker_dir, exist_ok=True)
 
@@ -349,7 +352,7 @@ def record_to_database(speaker_name, db_dir="self_recorded", sample_rate=8000, r
         for rep in range(repeats):
             input(f"Press ENTER to record digit '{digit}'")
 
-            save_path = os.path.join(speaker_dir, f"{digit}_{speaker_name}_{rep}.wav")
+            save_path = os.path.join(speaker_dir, f"{digit}_{speaker_name}_{rep}_{extra}.wav")
             record_and_save(save_path, sample_rate=sample_rate)
 
     print(f"Saved {repeats * 10} recordings to {speaker_dir}/")

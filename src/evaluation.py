@@ -20,14 +20,14 @@ import torchaudio.transforms as T
 model_augment = models.CNNClassifier()
 model_unaugment = models.CNNClassifier()
 model_pitch_augment = models.CNNClassifierv2()
-model_gru = models.GRUClassifier(input_size=32, hidden_size=128, num_classes=10)
-model_gru128pitched = models.GRUClassifier(input_size=32, hidden_size=128, num_classes=10)
+model_gru = models.GRUClassifier(input_size=32, hidden_size=128)
+model_CNNgru = models.CNNGRUClassifier(hidden_size=128)
 
 model_augment.load_state_dict(torch.load("Models/augmented_data_CNNClassifier_bs256_lr0.01_epoch25_val0.9547"))
 model_unaugment.load_state_dict(torch.load("Models/CNNClassifier_bs64_lr0.01_epoch19_val0.9767"))
 model_pitch_augment.load_state_dict(torch.load("Models/pitched_data_CNNClassifier_v2_bs256_lr0.01_epoch19_val0.9773"))
 model_gru.load_state_dict(torch.load("Models/GRU_GRUClassifier_bs256_lr0.01_epoch13_val0.9640"))
-model_gru128pitched.load_state_dict(torch.load("Models/__GRUClassifier_bs256_lr0.01_epoch13_val0.8787"))
+model_CNNgru.load_state_dict(torch.load("Models/_CNNGRUClassifier_bs32_lr0.001_epoch12_val0.9880"))
 
 #the test datasets being run
 clean_test = utils.dataset_from_list(
@@ -77,9 +77,10 @@ eval_models = {
     "Pitch Augmented" : model_pitch_augment,
     "Unaugmented"     : model_unaugment,
     'GRU'             : model_gru,
-    "GRU128Pitched"   : model_gru128pitched
+    "CNN+GRU"         : model_CNNgru
 }
-
+print (utils.get_accuracy(model_CNNgru, self_recorded_data))
+print (utils.get_accuracy_by_class(model_CNNgru, self_recorded_data))
 #getting the accuracy of the models as table
 header = f"{'Dataset':<16}" + "".join(f"{name:>18}" for name in eval_models)
 print(header)
@@ -91,6 +92,6 @@ for dataset_name, dataset in test_datasets.items():
         acc  = utils.get_accuracy(model, dataset)
         row += f"{acc:>17.1%} "
     print(row)
-print (utils.get_accuracy_by_class(model_gru, self_recorded_data))
+print (utils.get_accuracy_by_class(model_CNNgru, self_recorded_data))
 
 

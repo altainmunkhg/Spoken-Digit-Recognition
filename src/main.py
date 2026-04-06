@@ -17,12 +17,13 @@ import torchaudio
 import torchaudio.transforms as T
 
 train_data = data_processing.train_data
+
 val_data = data_processing.val_data
 
-model = models.GRUClassifier(input_size=train_data[0][0].size(2), hidden_size=128, num_classes=10)
+model = models.CNNGRUClassifier(hidden_size=128)
 
 
-utils.train(model, train_data, val_data, num_epochs=20, batch_size=256, lr = 0.01, name = "_")
+utils.train(model, train_data, val_data, num_epochs=20, batch_size=32, lr = 0.001, name = "")
 
 
 
