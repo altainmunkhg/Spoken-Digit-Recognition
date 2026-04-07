@@ -1,2 +1,2 @@
 import utils
-utils.record_to_database("Altai")
+utils.record_to_database("Gabe")

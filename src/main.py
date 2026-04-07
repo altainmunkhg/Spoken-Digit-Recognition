@@ -23,7 +23,7 @@ val_data = data_processing.val_data
 model = models.CNNGRUClassifier(hidden_size=128)
 
 
-utils.train(model, train_data, val_data, num_epochs=20, batch_size=32, lr = 0.001, name = "")
+utils.train(model, train_data, val_data, num_epochs=15, batch_size=64, lr = 0.001, name = "")
 
 
 

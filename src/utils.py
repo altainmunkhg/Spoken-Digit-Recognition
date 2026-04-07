@@ -356,3 +356,22 @@ def record_to_database(speaker_name, db_dir="self_recorded", sample_rate=8000, r
             record_and_save(save_path, sample_rate=sample_rate)
 
     print(f"Saved {repeats * 10} recordings to {speaker_dir}/")
+
+class add_speed_change_transform:
+    def __init__(self, speed_min=0.9, speed_max=1.1, sample_rate=8000):
+        self.speed_min = speed_min
+        self.speed_max = speed_max
+        self.sample_rate = sample_rate
+
+
+    def __call__(self, waveform):
+        speed = torch.FloatTensor(1).uniform_(self.speed_min, self.speed_max).item()
+
+        orig_freq = int(self.sample_rate * speed)
+        waveform  = torchaudio.functional.resample(
+            waveform,
+            orig_freq=orig_freq,
+            new_freq=self.sample_rate
+        )
+        return waveform
+    
