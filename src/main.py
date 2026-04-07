@@ -20,7 +20,7 @@ train_data = data_processing.train_data
 
 val_data = data_processing.val_data
 
-model = models.CNNGRUClassifier(hidden_size=128)
+model = models.ANNClassifier()
 
 
 utils.train(model, train_data, val_data, num_epochs=15, batch_size=64, lr = 0.001, name = "")

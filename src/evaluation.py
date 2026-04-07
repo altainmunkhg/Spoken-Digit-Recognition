@@ -18,13 +18,13 @@ import torchaudio.transforms as T
 
 #models being elavuated
 model_augment = models.CNNClassifier()
-model_unaugment = models.CNNClassifier()
+model_ANN = models.ANNClassifier()
 model_pitch_augment = models.CNNClassifierv2()
 model_gru = models.GRUClassifier(input_size=32, hidden_size=128)
 model_CNNgru = models.CNNGRUClassifier(hidden_size=128)
 
 model_augment.load_state_dict(torch.load("Models/augmented_data_CNNClassifier_bs256_lr0.01_epoch25_val0.9547"))
-model_unaugment.load_state_dict(torch.load("Models/CNNClassifier_bs64_lr0.01_epoch19_val0.9767"))
+model_ANN.load_state_dict(torch.load("Models/_ANNClassifier_bs64_lr0.001_epoch14_val0.6973"))
 model_pitch_augment.load_state_dict(torch.load("Models/pitched_data_CNNClassifier_v2_bs256_lr0.01_epoch19_val0.9773"))
 model_gru.load_state_dict(torch.load("Models/GRU_GRUClassifier_bs256_lr0.01_epoch13_val0.9640"))
 model_CNNgru.load_state_dict(torch.load("Models/_CNNGRUClassifier_bs32_lr0.001_epoch9_val0.9880"))
@@ -61,26 +61,26 @@ pitch_down_test = utils.dataset_from_list(
     ])
 )
 
-self_recorded_data = utils.dataset_from_file('self_recorded/Altai', transform=utils.MyPipeline())
-
+self_recorded_data_1 = utils.dataset_from_file('self_recorded/Jack', transform=utils.MyPipeline())
+self_recorded_data_3 = utils.dataset_from_file('self_recorded/Altai', transform=utils.MyPipeline())
+self_recorded_data_2 = utils.dataset_from_file('self_recorded/Gabe', transform=utils.MyPipeline())
+self_recorded_data = torch.utils.data.ConcatDataset([self_recorded_data_1, self_recorded_data_2, self_recorded_data_3]) 
+self_recorded_data = utils.dataset_from_file('self_recorded/Billy', transform=utils.MyPipeline())  
 
 test_datasets = {
-    "Clean"        : clean_test,
-    "Noisy"        : noisy_test,
-    "Pitch Up"     : pitch_up_test,
-    "Pitch Down"   : pitch_down_test,
+    #"Unaugmented"        : clean_test,
+    #"Noisy"        : noisy_test,
+    #"Pitch Up"     : pitch_up_test,
+    #"Pitch Down"   : pitch_down_test,
     "Self Recorded": self_recorded_data,
 }
 
 eval_models = {
-    "CNN+Noise"       : model_augment,
-    "CNN+Noise+Pitch" : model_pitch_augment,
-    "CNN"     : model_unaugment,
-    'GRU'             : model_gru,
+    #"CNN" : model_pitch_augment,
+    "ANN"              : model_ANN,
+    #'GRU'             : model_gru,
     "CNN+GRU"         : model_CNNgru
 }
-print (utils.get_accuracy(model_CNNgru, self_recorded_data))
-print (utils.get_accuracy_by_class(model_CNNgru, self_recorded_data))
 #getting the accuracy of the models as table
 header = f"{'Dataset':<16}" + "".join(f"{name:>18}" for name in eval_models)
 print(header)
@@ -95,3 +95,7 @@ for dataset_name, dataset in test_datasets.items():
 print (utils.get_accuracy_by_class(model_CNNgru, self_recorded_data))
 
 
+for model_name, model in eval_models.items():
+    for dataset_name, dataset in test_datasets.items():
+         acc = utils.get_accuracy_by_class(model, dataset)
+         print(f"Model: {model_name}, Dataset: {dataset_name}, Accuracy: {acc}")
